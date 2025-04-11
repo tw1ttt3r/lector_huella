@@ -5,11 +5,23 @@ class DatabaseService {
   bool _isInitialized = false;
 
   Future<void> initialize(String url, String authToken) async {
-    _client = LibsqlClient(
-      url,
-      authToken: authToken.isNotEmpty ? authToken : null,
-    );
-    _isInitialized = true;
+    try {
+      _client = LibsqlClient(
+        url
+      )..authToken = authToken.isNotEmpty ? authToken : null;
+
+      // Crear conexión con turso
+      await _client.connect();
+
+      // Intenta una consulta simple para forzar conexión
+      await _client.execute('SELECT 1');
+
+      _isInitialized = true;
+      print('Conexión establecida correctamente');
+    } catch (e) {
+      print('Error al inicializar la base de datos: $e');
+      throw Exception('Fallo al conectar con la base de datos');
+    }
   }
 
   Future<List<Map<String, dynamic>>> query(
