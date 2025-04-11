@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
 import 'database_service.dart';
 import '../models/models.dart';
 
@@ -11,30 +12,47 @@ class AuthService {
 
   Future<bool> checkBiometrics() async {
     try {
-      return await _localAuth.canCheckBiometrics;
-    } on PlatformException catch (e) {
-      print('Error checking biometrics: $e');
+      final biometrics = await _localAuth.getAvailableBiometrics();
+      print('Biométricos disponibles: $biometrics');
+      
+      if (biometrics.contains(BiometricType.strong)) {
+        print('Autenticación fuerte disponible');
+      }
+
+      return true;
+    } catch (e) {
+      print('Error al verificar biométricos: $e');
       return false;
     }
   }
 
   Future<bool> authenticate() async {
-    try {
-      if (!await checkBiometrics()) return false;
+  try {
+    final canAuthenticate = await _localAuth.canCheckBiometrics 
+        || await _localAuth.isDeviceSupported();
+    
+    if (!canAuthenticate) return false;
 
-      return await _localAuth.authenticate(
-        localizedReason: 'Autentícate con tu huella digital',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          useErrorDialogs: true,
-          stickyAuth: true,
+    return await _localAuth.authenticate(
+      localizedReason: 'Autentícate para acceder',
+      options: const AuthenticationOptions(
+        biometricOnly: true,
+        useErrorDialogs: true,
+        stickyAuth: true,
+      ),
+      authMessages: const [
+        AndroidAuthMessages(
+          biometricHint: '',
+          cancelButton: 'Cancelar',
+          signInTitle: 'Autenticación requerida',
         ),
-      );
-    } on PlatformException catch (e) {
-      print('Error en autenticación: $e');
-      return false;
-    }
+      ],
+    );
+  } on PlatformException catch (e) {
+    print('Error de autenticación: ${e.message}');
+    return false;
   }
+}
 
   Future<User?> getUserByFingerprint(String fingerprintData) async {
     try {
