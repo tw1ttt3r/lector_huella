@@ -29,9 +29,6 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         manifestPlaceholders += mapOf("appAuthRedirectScheme" to "com.tw1ttt3r.lector_huella")
-        /*ndk {
-            abiFilters.add("arm64-v8a")
-        }*/
     }
 
     buildTypes {
